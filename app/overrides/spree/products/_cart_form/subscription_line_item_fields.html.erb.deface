@@ -1,0 +1,3 @@
+<!-- insert_after '[data-hook="inside_product_cart_form"]' -->
+
+<%= render partial: 'spree/frontend/products/subscription_line_item_fields' %>

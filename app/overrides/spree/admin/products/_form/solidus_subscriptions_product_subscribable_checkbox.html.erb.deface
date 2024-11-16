@@ -1,0 +1,3 @@
+<!-- insert_after '[data-hook="admin_product_form_promotionable"]' -->
+
+<%= render partial: 'spree/admin/products/subscribable_checkbox' %>

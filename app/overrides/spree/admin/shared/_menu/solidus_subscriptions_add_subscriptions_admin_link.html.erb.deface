@@ -1,0 +1,5 @@
+<!-- insert_bottom '[data-hook="admin_tabs"]' -->
+
+<% unless Spree::Backend::Config.respond_to?(:menu_items) %>
+  <%= render partial: 'spree/admin/shared/subscription_tab' %>
+<% end %>

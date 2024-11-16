@@ -1,0 +1,3 @@
+<!-- insert_after '[data-hook="track_inventory"]' -->
+
+<%= render partial: 'spree/admin/variants/subscribable_checkbox' %>

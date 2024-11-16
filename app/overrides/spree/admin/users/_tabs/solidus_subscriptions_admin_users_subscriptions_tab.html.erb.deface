@@ -1,0 +1,3 @@
+<!-- insert_bottom '[data-hook="admin_user_tab_options"]' -->
+
+<%= render partial: 'spree/admin/users/subscription_tab' %>
