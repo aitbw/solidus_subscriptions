@@ -1,57 +1,53 @@
 #!/usr/bin/env bash
 
 set -e
-test -z "${DEBUG+empty_string}" || set -x
 
-test "$DB" = "sqlite" && export DB="sqlite3"
-
-if [ -z "$PAYMENT_METHOD" ]
-then
-  PAYMENT_METHOD="none"
-fi
-
-if [ -z "$SOLIDUS_BRANCH" ]
-then
-  echo "~~> Use 'export SOLIDUS_BRANCH=[main|v4.0|...]' to control the Solidus branch"
-  SOLIDUS_BRANCH="main"
-fi
-echo "~~> Using branch $SOLIDUS_BRANCH of solidus"
+case "$DB" in
+postgres|postgresql)
+  RAILSDB="postgresql"
+  ;;
+mysql)
+  RAILSDB="mysql"
+  ;;
+sqlite|'')
+  RAILSDB="sqlite3"
+  ;;
+*)
+  echo "Invalid DB specified: $DB"
+  exit 1
+  ;;
+esac
 
 extension_name="solidus_subscriptions"
 
 # Stay away from the bundler env of the containing extension.
 function unbundled {
-  ruby -rbundler -e'
-      Bundler.with_unbundled_env {system *ARGV}' -- \
-        env BUNDLE_SUPPRESS_INSTALL_USING_MESSAGES=true $@
+  ruby -rbundler -e'b = proc {system *ARGV}; Bundler.respond_to?(:with_unbundled_env) ? Bundler.with_unbundled_env(&b) : Bundler.with_clean_env(&b)' -- $@
 }
 
-echo "~~~> Removing the old sandbox"
 rm -rf ./sandbox
-
-echo "~~~> Creating a pristine Rails app"
-rails new sandbox \
-  --database="${DB:-sqlite3}" \
+unbundled bundle exec rails new sandbox --database="$RAILSDB" \
+  --skip-bundle \
   --skip-git \
   --skip-keeps \
   --skip-rc \
-  --skip-bootsnap \
-  --skip-test
+  --skip-spring \
+  --skip-test \
+  --skip-javascript \
+  --skip-bootsnap
 
 if [ ! -d "sandbox" ]; then
   echo 'sandbox rails application failed'
   exit 1
 fi
 
-echo "~~~> Adding solidus (with i18n) to the Gemfile"
 cd ./sandbox
 cat <<RUBY >> Gemfile
-gem 'solidus', github: 'solidusio/solidus', branch: '$SOLIDUS_BRANCH'
-gem 'rails-i18n'
-gem 'solidus_i18n'
-gem 'solidus_auth_devise'
 
 gem '$extension_name', path: '..'
+gem 'solidus_auth_devise', '>= 2.1.0'
+gem 'rails-i18n'
+gem 'solidus_i18n'
 
 group :test, :development do
   platforms :mri do
